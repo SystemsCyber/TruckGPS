@@ -156,7 +156,7 @@ void printPVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 {   
   CAN_message_t msg;
   msg.len = 8;
-  //msg.flags.ext = 1;
+  msg.flags.extended = 1;
 
   //Send out time and number of sats.
   num_sats = myGNSS.getSIV();
