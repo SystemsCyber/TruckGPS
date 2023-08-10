@@ -6,10 +6,14 @@ These steps will show how to install the Arduino IDE and install the required li
 
 1. Download and install the [Arduino 2.0.x IDE](https://www.arduino.cc/en/software) from Arduino's website.
 1. Open the Arduino IDE and install [Teensyduino](https://www.pjrc.com/teensy/td_download.html) by following the steps on their website.
-1. In the Arduino IDE application, click on the Library Manager tab on the left and search "Sparkfun u-blox GNSS v3" and install it.
-![Image](./docs/images/SerLCD_Install.png)
-1. In the same Library Manager tab, search and install "Sparkfun SerLCD Arduino Library".
+1. In the Arduino IDE application, click on the Library Manager on the left tab and search "Sparkfun u-blox GNSS v3" and install it.
+
 ![Image](./docs/images/sparkfun_u-blox_GNSS_Install.png)
+
+1. In the same Library Manager tab, search and install "Sparkfun SerLCD Arduino Library".
+
+![Image](./docs/images/SerLCD_Install.png)
+
 1. Click the green checkmark at the top left to verify the code and check for any errors.
 1. Click the right arrow at the top left to upload the code to the Arduino. Connect an antenna to it and it should search and find satellites. 
 1. Connect a CANLogger3 and/or a TruckCape with the Arduino and it should broadcast GPS data and filter CAN msgs to only IDs that contain wheel-based vehicle speed and engine speed.
