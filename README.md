@@ -10,13 +10,13 @@ These steps will show how to install the Arduino IDE and install the required li
 
 ![Image](./docs/images/sparkfun_u-blox_GNSS_Install.png)
 
-1. In the same Library Manager tab, search and install "Sparkfun SerLCD Arduino Library".
+4. In the same Library Manager tab, search and install "Sparkfun SerLCD Arduino Library".
 
 ![Image](./docs/images/SerLCD_Install.png)
 
-1. Click the green checkmark at the top left to verify the code and check for any errors.
-1. Click the right arrow at the top left to upload the code to the Arduino. Connect an antenna to it and it should search and find satellites. 
-1. Connect a CANLogger3 and/or a TruckCape with the Arduino and it should broadcast GPS data and filter CAN msgs to only IDs that contain wheel-based vehicle speed and engine speed.
+5. Click the green checkmark at the top left to verify the code and check for any errors.
+6. Click the right arrow at the top left to upload the code to the Arduino. Connect an antenna to it and it should search and find satellites. 
+7. Connect a CANLogger3 and/or a TruckCape with the Arduino and it should broadcast GPS data and filter CAN msgs to only IDs that contain wheel-based vehicle speed and engine speed.
 
 ## Decoding the Data
 After CAN data is logged, it can be decoded to get GPS information. GPS information is saved to the CAN data in IDs FF01, FF02, and FF03. FF01 is the position pgn, FF02 is considered the velocity pgn, and FF03 is the gps time pgn. 
