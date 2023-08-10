@@ -25,25 +25,25 @@ Below is a table showing how to decode the bytes:
 
 These can be decoded by hand or the python script called "CAN_GPS_Decoder.py" can be used. Below will show the various tasks it can perform.
 
+This will simply display all of the possible arguments with descriptions of each argument:
 ```
 python3 CAN_GPS_Decoder.py -h
 ```
-This will simply display all of the possible arguments with descriptions of each argument.
 
+This will decode and plot both the vehicle speed and engine speed from the CAN data:
 ```
 python3 CAN_GPS_Decoder.py --plot filename
 ```
-This will decode and plot both the vehicle speed and engine speed from the CAN data
 
+This will decode and plot both the vehicle speed and engine speed from two CAN data files. This can be used to compare two CAN data files. It can also be used to make sure that a CAN binary and CAN text file of the same drive match up correctly:
 ```
 python3 CAN_GPS_Decoder.py --plot-two-files filename1 filename2
 ```
-This will decode and plot both the vehicle speed and engine speed from two CAN data files. This can be used to compare two CAN data files. It can also be used to make sure that a CAN binary and CAN text file of the same drive match up correctly.
 
+This will display basic information about the number of satellites present, the gps time, gps velocity, and heading degree while data was being logged:
 ```
 python3 CAN_GPS_Decoder.py --show-gps-info filename
 ```
-This will display basic information about the number of satellites present, the gps time, gps velocity, and heading degree while data was being logged.
 
 ## Generating a KML File
 Additionally, the python script can be used to generate a kml file based on the data logged. To generate the kml file, run the command:
