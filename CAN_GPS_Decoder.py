@@ -1,5 +1,7 @@
 import os
 import matplotlib.pyplot as plt
+import plotly.graph_objs as go
+import plotly.subplots as sp
 import argparse
 import struct
 from collections import Counter
@@ -80,11 +82,20 @@ def get_data(can_msgs):
     latitude = []
     gpsSpeed = []
     headingDegree = []
+    timestampHeading = []
     numSats = []
     gpsTime = []
+    timestampSat = []
+    timestampsLocation = []
+    counter = 0
+    firstTimestamp = 0
+    canloggerTime = []
     
     for i in can_msgs:
         contents = i.split()
+        if counter == 0:
+            firstTimestamp = float(contents[0][1:-1])
+            counter = 1
         data = contents[2].split('#')
         id = data[0]
         dataBytes = data[1]
@@ -99,26 +110,28 @@ def get_data(can_msgs):
             speed = int((dataBytes[4:6] + dataBytes[2:4]),16)*(1/256)
             if(0 < speed < 250.99609375):
                 vehicleSpeed.append(speed)
-                timestampsVehicle.append(float(contents[0][1:-1]))
+                timestampsVehicle.append(float(contents[0][1:-1]) - firstTimestamp)
 
         #Get Engine Speed 190
         if(id[2:-2] == "F004"):
             speed = int((dataBytes[8:10] + dataBytes[6:8]),16)*0.125
             if(0 < speed < 8031.875):
                 engineSpeed.append(speed)
-                timestampsEngine.append(float(contents[0][1:-1]))
+                timestampsEngine.append(float(contents[0][1:-1]) - firstTimestamp)
 
-        #Get Logitude and Latitude
+        #Get Longitude and Latitude
         if(id[2:-2] == "FF01"):
             longitudeHex = dataBytes[14:16] + dataBytes[12:14] + dataBytes[10:12] + dataBytes[8:10]
             latitudeHex = dataBytes[6:8] + dataBytes[4:6] + dataBytes[2:4] + dataBytes[0:2]
             longitude.append(twos_complement(longitudeHex, 32)/10000000)
             latitude.append(twos_complement(latitudeHex, 32)/10000000)
+            timestampsLocation.append(float(contents[0][1:-1]) - firstTimestamp)
 
         #Get GPS Speed and Heading Degree
         if(id[2:-2] == "FF02"):
             gpsSpeed.append(int((dataBytes[6:8] + dataBytes[4:6] + dataBytes[2:4] + dataBytes[0:2]), 16)/1000000)
             headingDegree.append(int((dataBytes[14:16] + dataBytes[12:14] + dataBytes[10:12] + dataBytes[8:10]), 16)/100000)
+            timestampHeading.append(float(contents[0][1:-1]) - firstTimestamp)
 
         #Get number of satellites and GPS time
         if(id[2:-2] == "FF03"):
@@ -126,9 +139,12 @@ def get_data(can_msgs):
             us = int((dataBytes[6:8] + dataBytes[4:6] + dataBytes[2:4]), 16)
             epoch = int((dataBytes[14:16] + dataBytes[12:14] + dataBytes[10:12] + dataBytes[8:10]), 16)
             gpsTime.append(float(epoch) + (float(us)/1000000))
+            canloggerTime.append(float(contents[0][1:-1]))
+            timestampSat.append(float(contents[0][1:-1]) - firstTimestamp)
                 
     return [timestampsVehicle, vehicleSpeed, timestampsEngine, engineSpeed,
-        longitude, latitude, gpsSpeed, headingDegree, numSats, gpsTime]
+        longitude, latitude, gpsSpeed, headingDegree, numSats, gpsTime, timestampSat, 
+        timestampHeading, timestampsLocation, canloggerTime]
 
 def handleFile(filename):
     #Handle .txt file
@@ -167,39 +183,88 @@ def main():
     args = parser.parse_args()
     
     if args.plot:
-            #Handle file
-            filename = args.plot[0]
-            canData = handleFile(filename)
+        # Handle file
+        filename = args.plot[0]
+        canData = handleFile(filename)
 
-            timestampsVehicle = canData[0]
-            vehicleSpeed = canData[1]
-            timestampsEngine = canData[2]
-            engineSpeed = canData[3]
+        timestampsVehicle = canData[0]
+        vehicleSpeed = canData[1]
+        timestampsEngine = canData[2]
+        engineSpeed = canData[3]
 
-            
-            # Combine plots in the same window
-            fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
+        longitude = canData[4]
+        latitude = canData[5]
+        timestampsLocation = canData[12]
 
-            # Plot for Vehicle Speed
-            axes[0].plot(timestampsVehicle, vehicleSpeed, label='Vehicle Speed')
-            axes[0].set_xlabel('Time')
-            axes[0].set_ylabel('Vehicle Speed (km/h)')
-            axes[0].set_title('Vehicle Speed Plot')
-            axes[0].legend()
-            axes[0].grid(True)
+        gpsSpeed = canData[6]
+        headingDegree = canData[7]
+        timestampHeading = canData[11]
 
-            # Plot for Engine Speed
-            axes[1].plot(timestampsEngine, engineSpeed, label='Engine Speed')
-            axes[1].set_xlabel('Time')
-            axes[1].set_ylabel('Engine Speed (rpm)')
-            axes[1].set_title('Engine Speed')
-            axes[1].legend()
-            axes[1].grid(True)
+        numSats = canData[8]
+        gpsTime = canData[9]
+        canloggerTime = canData[13]
+        timestampSats = canData[10]
 
-            # Display the plots
-            plt.tight_layout()
-            plt.show()
-    
+        # Create subplots
+        fig = sp.make_subplots(rows=4, cols=2, subplot_titles=('Vehicle Speed', 'Engine Speed',
+                                                            'Longitude over Time', 'Latitude over Time',
+                                                            'GPS Speed', 'Heading Degree', 'Number of Satellites',
+                                                          'GPS Track Time over CANLogger3/TruckCape Tracked Time'))
+
+        # Plot for Vehicle Speed
+        vehicle_speed_trace = go.Scatter(x=timestampsVehicle, y=vehicleSpeed, mode='lines', name='Vehicle Speed')
+        fig.add_trace(vehicle_speed_trace, row=1, col=1)
+        fig.update_xaxes(title_text='Time', row=1, col=1)
+        fig.update_yaxes(title_text='Vehicle Speed (km/h)', row=1, col=1)
+
+        # Plot for Engine Speed
+        engine_speed_trace = go.Scatter(x=timestampsEngine, y=engineSpeed, mode='lines', name='Engine Speed')
+        fig.add_trace(engine_speed_trace, row=1, col=2)
+        fig.update_xaxes(title_text='Time', row=1, col=2)
+        fig.update_yaxes(title_text='Engine Speed (rpm)', row=1, col=2)
+
+        # Plot for Longitude over Time
+        longitude_trace = go.Scatter(x=timestampsLocation, y=longitude, mode='lines', name='Longitude')
+        fig.add_trace(longitude_trace, row=2, col=1)
+        fig.update_xaxes(title_text='Time', row=2, col=1)
+        fig.update_yaxes(title_text='Longitude', row=2, col=1)
+
+        # Plot for Latitude over Time
+        latitude_trace = go.Scatter(x=timestampsLocation, y=latitude, mode='lines', name='Latitude')
+        fig.add_trace(latitude_trace, row=2, col=2)
+        fig.update_xaxes(title_text='Time', row=2, col=2)
+        fig.update_yaxes(title_text='Latitude', row=2, col=2)
+
+        # Plot for GPS Speed
+        gps_speed_trace = go.Scatter(x=timestampHeading, y=gpsSpeed, mode='lines', name='GPS Speed')
+        fig.add_trace(gps_speed_trace, row=3, col=1)
+        fig.update_xaxes(title_text='Time', row=3, col=1)
+        fig.update_yaxes(title_text='GPS Speed (m/h)', row=3, col=1)
+
+        # Plot for Heading Degree
+        heading_degree_trace = go.Scatter(x=timestampHeading, y=headingDegree, mode='lines', name='Heading Degree')
+        fig.add_trace(heading_degree_trace, row=3, col=2)
+        fig.update_xaxes(title_text='Time', row=3, col=2)
+        fig.update_yaxes(title_text='Heading Degree', row=3, col=2)
+
+        # Plot for Number of Satellites
+        num_sats_trace = go.Scatter(x=timestampSats, y=numSats, mode='lines', name='Number of Satellites')
+        fig.add_trace(num_sats_trace, row=4, col=1)
+        fig.update_xaxes(title_text='Time', row=4, col=1)
+        fig.update_yaxes(title_text='Number of Satellites', row=4, col=1)
+
+        # Plot for GPS Time over Timestamp Satellites
+        gps_time_trace = go.Scatter(x=canloggerTime, y=gpsTime, mode='lines', name='GPS Time')
+        fig.add_trace(gps_time_trace, row=4, col=2)
+        fig.update_xaxes(title_text='Timestamp Satellites', row=4, col=2)
+        fig.update_yaxes(title_text='GPS Time', row=4, col=2)
+
+        # Update layout and display the plot
+        fig.update_layout(title_text='GPS Plots', showlegend=True)
+        fig.show()
+
+
+
     if args.show_gps_info:
         #Handle file
         filename = args.show_gps_info[0]
