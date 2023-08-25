@@ -6,6 +6,7 @@ import argparse
 import struct
 from collections import Counter
 from numpy import mean
+import numpy as np
 
 #Gets highest occuring value in a list/array
 def most_frequent_value(lst):
@@ -60,10 +61,21 @@ def create_kml_file(filename, longitude_list, latitude_list):
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         f.write('<kml xmlns="http://www.opengis.net/kml/2.2">\n')
         f.write('  <Document>\n')
+        
+        # Define a style for a smaller pin
+        f.write('    <Style id="smallPin">\n')
+        f.write('      <IconStyle>\n')
+        f.write('        <scale>0.5</scale>\n')  # This scale value can be adjusted to your desired size
+        f.write('        <Icon>\n')
+        f.write('          <href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>\n')  # default yellow pushpin
+        f.write('        </Icon>\n')
+        f.write('      </IconStyle>\n')
+        f.write('    </Style>\n')
 
         for i, (longitude, latitude) in enumerate(zip(longitude_list, latitude_list), start=1):
             f.write(f'    <Placemark>\n')
             f.write(f'      <name>Location {i}</name>\n')
+            f.write(f'      <styleUrl>#smallPin</styleUrl>\n')  # Reference the custom style
             f.write(f'      <Point>\n')
             f.write(f'        <coordinates>{longitude},{latitude},0</coordinates>\n')
             f.write(f'      </Point>\n')
@@ -71,6 +83,7 @@ def create_kml_file(filename, longitude_list, latitude_list):
 
         f.write('  </Document>\n')
         f.write('</kml>\n')
+
 
 #Decodes CAN data
 def get_data(can_msgs):
@@ -205,11 +218,12 @@ def main():
         canloggerTime = canData[13]
         timestampSats = canData[10]
 
+
         # Create subplots
-        fig = sp.make_subplots(rows=4, cols=2, subplot_titles=('Vehicle Speed', 'Engine Speed',
+        fig = sp.make_subplots(rows=4, cols=2, subplot_titles=('Wheel Based Vehicle Speed SPN 84', 'Engine Speed SPN 190',
                                                             'Longitude over Time', 'Latitude over Time',
                                                             'GPS Speed', 'Heading Degree', 'Number of Satellites',
-                                                          'GPS Track Time over CANLogger3/TruckCape Tracked Time'))
+                                                          'GPS Tracked Time over CANLogger3/TruckCape Tracked Time'))
 
         # Plot for Vehicle Speed
         vehicle_speed_trace = go.Scatter(x=timestampsVehicle, y=vehicleSpeed, mode='lines', name='Vehicle Speed')
@@ -327,7 +341,7 @@ def main():
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(15, 7))
 
         # Plot for File 1 Vehicle Speed
-        axes[0][0].plot(timestampsVehicle1, vehicleSpeed1, label='Vehicle Speed')
+        axes[0][0].plot(timestampsVehicle1, vehicleSpeed1, label='Wheel Based Vehicle Speed 84')
         axes[0][0].set_xlabel('Time')
         axes[0][0].set_ylabel('Vehicle Speed (km/h)')
         axes[0][0].set_title(file1 + ' Vehicle Speed Plot')
@@ -335,7 +349,7 @@ def main():
         axes[0][0].grid(True)
 
         # Plot for File 1 Engine Speed
-        axes[0][1].plot(timestampsEngine1, engineSpeed1, label='Engine Speed')
+        axes[0][1].plot(timestampsEngine1, engineSpeed1, label='Engine Speed 190')
         axes[0][1].set_xlabel('Time')
         axes[0][1].set_ylabel('Engine Speed (rpm)')
         axes[0][1].set_title(file1 + ' Engine Speed')
